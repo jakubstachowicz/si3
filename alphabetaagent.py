@@ -5,8 +5,8 @@ from minmax_utils import heuristic
 
 
 # +1 - 'o' is winning, -1 - 'x' is winning
-class MinMaxAgent:
-    def __init__(self, my_token='o', depth=4):
+class AlphaBetaAgent:
+    def __init__(self, my_token='o', depth=6):
         self.my_token = my_token
         self.opposite_token = 'x' if my_token == 'o' else 'o'
         self.depth = depth
@@ -14,11 +14,11 @@ class MinMaxAgent:
     def decide(self, connect4):
         if connect4.who_moves != self.my_token:
             raise AgentException('not my round')
-        decided = self.minmax(connect4)
+        decided = self.alphabeta(connect4, float('-inf'), float('inf'))
         return decided[1]
 
     # [best_score, move]
-    def minmax(self, connect4):
+    def alphabeta(self, connect4, alpha, beta):
         if connect4.who_moves != self.my_token:
             raise AgentException('not my round')
 
@@ -37,10 +37,10 @@ class MinMaxAgent:
 
         for drop in possible_drops:
             connect4_copy = copy.deepcopy(connect4)
-            opposite_agent = MinMaxAgent(self.opposite_token, self.depth - 1)
+            opposite_agent = AlphaBetaAgent(self.opposite_token, self.depth - 1)
             connect4_copy.drop_token(drop)
             try:
-                opposite_result = opposite_agent.minmax(connect4_copy)
+                opposite_result = opposite_agent.alphabeta(connect4_copy, alpha, beta)
             except AgentException:
                 raise AgentException('not my round')
 
@@ -48,9 +48,14 @@ class MinMaxAgent:
                 if opposite_result[0] > best_result:
                     best_result = opposite_result[0]
                     best_move = drop
+                alpha = max(alpha, best_result)
             else:
                 if opposite_result[0] < best_result:
                     best_result = opposite_result[0]
                     best_move = drop
+                beta = min(beta, best_result)
+
+            if beta <= alpha:
+                break  # alpha-beta cutoff
 
         return best_result, best_move
